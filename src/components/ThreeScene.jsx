@@ -1,7 +1,6 @@
 import * as Three from 'three';
 import { useEffect, useRef } from 'react';
-import { Style } from 'three/examples/jsm/inspector/ui/Style.js';
-
+import { InteractionManager } from '../logic/InteractionManager';
 /**
  * 
  * **/
@@ -10,6 +9,7 @@ export default function ThreeScene(){
     const mountRef = useRef(null);
 
     useEffect(() => {
+        console.log("three useEffect running");
         if(!mountRef.current) return;
 
         const scene = new Three.Scene();
@@ -19,17 +19,25 @@ export default function ThreeScene(){
     );
 
     const renderer = new Three.WebGLRenderer();
+    
     renderer.setSize( window.innerWidth, window.innerHeight);
-    mountRef.current.appendChild(renderer.domElement);
+
+    const currentMount = mountRef.current;
+    currentMount.appendChild(renderer.domElement);
     //document.body.appendChild(renderer.domElement);
     
     const geometry = new Three.BoxGeometry(1,1,1);
-
-    const material = new Three.MeshBasicMaterial({ color: 0x00ff00});
+    const geometry2 = new Three.CapsuleGeometry( 1, 1, 4, 8, 1 );
+    const material = new Three.MeshBasicMaterial({ color: 0xffffff});
     const cube = new Three.Mesh(geometry, material);
     scene.add(cube);
 
-    camera.position.z =5;
+    //to avoid rendering the camera and cube inside each other
+    camera.position.z = 6;
+
+
+    const interactions = new InteractionManager(camera, scene, renderer.domElement);
+    interactions.enable();
 
     function animate(){
         cube.rotation.x += 0.01;
@@ -39,10 +47,18 @@ export default function ThreeScene(){
 
     renderer.setAnimationLoop(animate);
 
+    return () => { 
+        interactions.disbale();
+        renderer.setAnimationLoop(null);
+        currentMount.removeChild(renderer.domElement);
+        renderer.dispose();
+        }
     
     },[]);
 
-      return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />;
+      return <div ref={mountRef} style={{ width: '100%', height: '100dvh'
+        ,position: 'absolute', top:0, left:0, overflow:'hidden'
+       }} />;
 
 
    
